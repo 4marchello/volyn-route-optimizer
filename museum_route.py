@@ -1,202 +1,149 @@
-{
- "cells": [
-  {
-   "cell_type": "markdown",
-   "id": "8e9920bb-21a8-4c95-9ee1-7ad02136d9aa",
-   "metadata": {},
-   "source": [
-    "0 - КАМІНЬ-КАШИРСЬКИЙ НАРОДНИЙ КРАЄЗНАВЧИЙ МУЗЕЙ\n",
-    "1 - Любомльський краєзнавчий музей\n",
-    "2 - Садиба Косачів\n",
-    "3 - Волинський краєзнавчий музей\n",
-    "4 - Лобненський музей партизанської Слави\n",
-    "5 - Музей флори та фауни Шацького лісового коледжу\n",
-    "6 - Володимирський історичний музей ім О. М. Дверницького"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 3,
-   "id": "e6879f98-132b-4d99-8a1d-d6686d67d311",
-   "metadata": {},
-   "outputs": [
-    {
-     "name": "stdin",
-     "output_type": "stream",
-     "text": [
-      "Enter start point:  5\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "\n",
-      " Optimized route (start and end at node  5):\n",
-      "Route: 5 -> 1 -> 6 -> 2 -> 0 -> 4 -> 3 -> 2 -> 1 -> 5\n",
-      "Total route length: 574.50 km.\n"
-     ]
-    }
-   ],
-   "source": [
-    "import numpy as np\n",
-    "INF = np.inf\n",
-    "START_NODE = int(input(\"Enter start point: \"))\n",
-    "INF = np.inf\n",
-    "graph = [\n",
-    "    #1      2    3     4    5     6    7\n",
-    "    [0,    INF, 61.8, INF, 60.6, INF, INF], # 1 \n",
-    "    [INF,  0,   59,   INF, INF,  32,  52],  # 2 \n",
-    "    [61.8, 59,  0,    66,  INF,  93,  60],  # 3 \n",
-    "    [INF,  INF, 66,   0,   151.1,INF, 77],  # 4 \n",
-    "    [60.6, INF, INF,  151.1,0,   INF, INF], # 5 \n",
-    "    [INF,  32,  93,   INF, INF,  0,   INF], # 6 \n",
-    "    [INF,  52,  60,   77,  INF,  INF, 0]    # 7 \n",
-    "]\n",
-    "\n",
-    "\n",
-    "def dijkstra(graph, start_node_index):\n",
-    "    N = len(graph)\n",
-    "    distances = [INF] * N\n",
-    "    visited = [False] * N\n",
-    "    predecessors = [-1] * N \n",
-    "    distances[start_node_index] = 0\n",
-    "\n",
-    "    for _ in range(N):\n",
-    "        min_dist = INF\n",
-    "        u = -1 \n",
-    "        \n",
-    "        for i in range(N):\n",
-    "            if not visited[i] and distances[i] < min_dist:\n",
-    "                min_dist = distances[i]\n",
-    "                u = i\n",
-    "        \n",
-    "        if u == -1:\n",
-    "            break\n",
-    "            \n",
-    "        visited[u] = True\n",
-    "        \n",
-    "        for v in range(N):\n",
-    "            weight = graph[u][v]\n",
-    "            if weight != INF: \n",
-    "                new_dist = distances[u] + weight\n",
-    "                if new_dist < distances[v]:\n",
-    "                    distances[v] = new_dist\n",
-    "                    predecessors[v] = u \n",
-    "                    \n",
-    "    return distances, predecessors\n",
-    "\n",
-    "def reconstruct_path(predecessors, start_node, end_node):\n",
-    "    path = []\n",
-    "    current = end_node\n",
-    "    \n",
-    "    while current != -1:\n",
-    "        path.append(current)\n",
-    "        if current == start_node:\n",
-    "            break\n",
-    "        current = predecessors[current]\n",
-    "        \n",
-    "    path.reverse()\n",
-    "    if not path or path[0] != start_node:\n",
-    "         return []\n",
-    "    return path\n",
-    "\n",
-    "\n",
-    "def dijkstra_all_pairs(graph):\n",
-    "    N = len(graph)\n",
-    "    dist_matrix = np.zeros((N, N))\n",
-    "    predecessor_maps = []\n",
-    "    \n",
-    "    for i in range(N):\n",
-    "        distances, predecessors = dijkstra(graph, i)\n",
-    "        dist_matrix[i] = distances\n",
-    "        predecessor_maps.append(predecessors)\n",
-    "        \n",
-    "    return dist_matrix, predecessor_maps\n",
-    "\n",
-    "\n",
-    "def tsp(dist_matrix, predecessor_maps, start_node_index):\n",
-    "    N = len(dist_matrix)\n",
-    "    visited_major = [False] * N \n",
-    "    \n",
-    "    route = [start_node_index]\n",
-    "    visited_major[start_node_index] = True\n",
-    "    \n",
-    "    current_major_node = start_node_index\n",
-    "    total_distance = 0.0\n",
-    "\n",
-    "    for _ in range(N - 1):\n",
-    "        min_dist = INF\n",
-    "        nearest_neighbor = -1\n",
-    "        \n",
-    "        for next_node in range(N):\n",
-    "            if not visited_major[next_node]:\n",
-    "                distance = dist_matrix[current_major_node, next_node]\n",
-    "                \n",
-    "                if distance < min_dist:\n",
-    "                    min_dist = distance\n",
-    "                    nearest_neighbor = next_node\n",
-    "        \n",
-    "        if nearest_neighbor != -1:\n",
-    "            \n",
-    "            predecessors = predecessor_maps[current_major_node]\n",
-    "            path_segment = reconstruct_path(predecessors, current_major_node, nearest_neighbor)\n",
-    "            \n",
-    "            if len(path_segment) > 1:\n",
-    "                route.extend(path_segment[1:])\n",
-    "            \n",
-    "            visited_major[nearest_neighbor] = True\n",
-    "            total_distance += min_dist\n",
-    "            current_major_node = nearest_neighbor \n",
-    "        else:\n",
-    "            break \n",
-    "            \n",
-    "    if route and route[-1] != start_node_index:\n",
-    "        distance_to_start = dist_matrix[current_major_node, start_node_index]\n",
-    "        total_distance += distance_to_start\n",
-    "        \n",
-    "        predecessors = predecessor_maps[current_major_node]\n",
-    "        path_segment = reconstruct_path(predecessors, current_major_node, start_node_index)\n",
-    "        \n",
-    "        if len(path_segment) > 1:\n",
-    "            route.extend(path_segment[1:])\n",
-    "\n",
-    "    return route, total_distance\n",
-    "shortest_dist_matrix, predecessor_maps = dijkstra_all_pairs(graph)\n",
-    "route_indices, total_distance = tsp(shortest_dist_matrix, predecessor_maps, START_NODE)\n",
-    "print(f\"\\n Optimized route (start and end at node  {START_NODE}):\")\n",
-    "print(f\"Route: {' -> '.join(map(str, route_indices))}\")\n",
-    "print(f\"Total route length: {total_distance:.2f} km.\")"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "632f3afd-e9e4-40ce-bf08-b366aeb17143",
-   "metadata": {},
-   "outputs": [],
-   "source": []
-  }
- ],
- "metadata": {
-  "kernelspec": {
-   "display_name": "Python 3 (ipykernel)",
-   "language": "python",
-   "name": "python3"
-  },
-  "language_info": {
-   "codemirror_mode": {
-    "name": "ipython",
-    "version": 3
-   },
-   "file_extension": ".py",
-   "mimetype": "text/x-python",
-   "name": "python",
-   "nbconvert_exporter": "python",
-   "pygments_lexer": "ipython3",
-   "version": "3.13.7"
-  }
- },
- "nbformat": 4,
- "nbformat_minor": 5
-}
+#!/usr/bin/env python
+# coding: utf-8
+
+# 0 - КАМІНЬ-КАШИРСЬКИЙ НАРОДНИЙ КРАЄЗНАВЧИЙ МУЗЕЙ
+# 1 - Любомльський краєзнавчий музей
+# 2 - Садиба Косачів
+# 3 - Волинський краєзнавчий музей
+# 4 - Лобненський музей партизанської Слави
+# 5 - Музей флори та фауни Шацького лісового коледжу
+# 6 - Володимирський історичний музей ім О. М. Дверницького
+
+# In[3]:
+
+
+import numpy as np
+INF = np.inf
+START_NODE = int(input("Enter start point: "))
+INF = np.inf
+graph = [
+    #1      2    3     4    5     6    7
+    [0,    INF, 61.8, INF, 60.6, INF, INF], # 1 
+    [INF,  0,   59,   INF, INF,  32,  52],  # 2 
+    [61.8, 59,  0,    66,  INF,  93,  60],  # 3 
+    [INF,  INF, 66,   0,   151.1,INF, 77],  # 4 
+    [60.6, INF, INF,  151.1,0,   INF, INF], # 5 
+    [INF,  32,  93,   INF, INF,  0,   INF], # 6 
+    [INF,  52,  60,   77,  INF,  INF, 0]    # 7 
+]
+
+
+def dijkstra(graph, start_node_index):
+    N = len(graph)
+    distances = [INF] * N
+    visited = [False] * N
+    predecessors = [-1] * N 
+    distances[start_node_index] = 0
+
+    for _ in range(N):
+        min_dist = INF
+        u = -1 
+
+        for i in range(N):
+            if not visited[i] and distances[i] < min_dist:
+                min_dist = distances[i]
+                u = i
+
+        if u == -1:
+            break
+
+        visited[u] = True
+
+        for v in range(N):
+            weight = graph[u][v]
+            if weight != INF: 
+                new_dist = distances[u] + weight
+                if new_dist < distances[v]:
+                    distances[v] = new_dist
+                    predecessors[v] = u 
+
+    return distances, predecessors
+
+def reconstruct_path(predecessors, start_node, end_node):
+    path = []
+    current = end_node
+
+    while current != -1:
+        path.append(current)
+        if current == start_node:
+            break
+        current = predecessors[current]
+
+    path.reverse()
+    if not path or path[0] != start_node:
+         return []
+    return path
+
+
+def dijkstra_all_pairs(graph):
+    N = len(graph)
+    dist_matrix = np.zeros((N, N))
+    predecessor_maps = []
+
+    for i in range(N):
+        distances, predecessors = dijkstra(graph, i)
+        dist_matrix[i] = distances
+        predecessor_maps.append(predecessors)
+
+    return dist_matrix, predecessor_maps
+
+
+def tsp(dist_matrix, predecessor_maps, start_node_index):
+    N = len(dist_matrix)
+    visited_major = [False] * N 
+
+    route = [start_node_index]
+    visited_major[start_node_index] = True
+
+    current_major_node = start_node_index
+    total_distance = 0.0
+
+    for _ in range(N - 1):
+        min_dist = INF
+        nearest_neighbor = -1
+
+        for next_node in range(N):
+            if not visited_major[next_node]:
+                distance = dist_matrix[current_major_node, next_node]
+
+                if distance < min_dist:
+                    min_dist = distance
+                    nearest_neighbor = next_node
+
+        if nearest_neighbor != -1:
+
+            predecessors = predecessor_maps[current_major_node]
+            path_segment = reconstruct_path(predecessors, current_major_node, nearest_neighbor)
+
+            if len(path_segment) > 1:
+                route.extend(path_segment[1:])
+
+            visited_major[nearest_neighbor] = True
+            total_distance += min_dist
+            current_major_node = nearest_neighbor 
+        else:
+            break 
+
+    if route and route[-1] != start_node_index:
+        distance_to_start = dist_matrix[current_major_node, start_node_index]
+        total_distance += distance_to_start
+
+        predecessors = predecessor_maps[current_major_node]
+        path_segment = reconstruct_path(predecessors, current_major_node, start_node_index)
+
+        if len(path_segment) > 1:
+            route.extend(path_segment[1:])
+
+    return route, total_distance
+shortest_dist_matrix, predecessor_maps = dijkstra_all_pairs(graph)
+route_indices, total_distance = tsp(shortest_dist_matrix, predecessor_maps, START_NODE)
+print(f"\n Optimized route (start and end at node  {START_NODE}):")
+print(f"Route: {' -> '.join(map(str, route_indices))}")
+print(f"Total route length: {total_distance:.2f} km.")
+input("Press Enter to close the program...")
+
+# In[ ]:
+
+
+
+
